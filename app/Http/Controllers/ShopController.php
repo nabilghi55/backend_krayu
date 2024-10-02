@@ -54,26 +54,27 @@ class ShopController extends Controller
 
 
     public function product($slug) {
-        //$slug;
         $product = Product::where('slug', $slug)->first();
+        
         if ($product == null) {
-            abort(404);
+            return response()->json(['message' => 'Product not found'], 404);
         }
-
+    
         $relatedProducts = [];
-        // Fetch Related Products
-
-        if ($product->related_products != '') {
-            $productArray = explode(',',$product->related_products);
-
-            $relatedProducts = Product::WhereIn('id', $productArray)->where('status',1)->get();
+        
+        if (!empty($product->related_products)) {
+            $productArray = explode(',', $product->related_products);
+            $relatedProducts = Product::whereIn('id', $productArray)->where('status', 1)->get();
         }
-
-        $data['product'] = $product;
-        $data['relatedProducts'] = $relatedProducts;
-
-        return view('front.product',$data);
+    
+        $data = [
+            'product' => $product,
+            'relatedProducts' => $relatedProducts
+        ];
+    
+        return response()->json($data);
     }
+    
 
     public function saveRating($id, Request $request){
         $validator = Validator::make($request->all(),[

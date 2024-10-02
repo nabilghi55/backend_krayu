@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FrontController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ShopController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PaymentCallbackController;
@@ -25,3 +26,4 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::post('/payments/midtrans-notification', [PaymentCallbackController::class, 'receive']);
 Route::get('/dummy-payment-callback', [PaymentCallbackController::class, 'dummyCallback']);
 Route::get('/products', [FrontController::class, 'index']);
+Route::get('/product/{slug}', [ShopController::class, 'product']);
