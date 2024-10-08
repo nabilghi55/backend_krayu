@@ -284,7 +284,6 @@ class CartController extends Controller
     public function processCheckout(Request $request)
     {
 
-        // Langkah 1 Apply Validation
 
         $validator = Validator::make($request->all(), [
             'first_name' => 'required|min:5',
@@ -306,7 +305,6 @@ class CartController extends Controller
             ]);
         }
 
-        // Langkah 2 Save User Address
 
         $user = Auth::user();
 
@@ -327,7 +325,6 @@ class CartController extends Controller
 
             ]
         );
-        // Langkah 3 Store Data in Orders Table
 
         if ($request->payment_method == 'cod') {
 
@@ -337,7 +334,6 @@ class CartController extends Controller
             $discount = 0;
             $subTotal = Cart::subtotal(2, '.', '');
 
-            //Discount
             if (session()->has('code')) {
                 $code = session()->get('code');
                 if ($code->type == 'percent') {
@@ -391,7 +387,6 @@ class CartController extends Controller
             $order->save();
 
 
-            // Langkah 4 Store Order Item in Order Items Table
 
             foreach (Cart::content() as $item) {
                 $orderItem = new OrderItem;
@@ -414,12 +409,10 @@ class CartController extends Controller
             }
             session()->flash('success', 'You Have Successfully Placed Your Order.');
 
-            // Langkah 5: Hancurkan keranjang belanja setelah berhasil melakukan checkout
             Cart::destroy();
 
             session()->forget('code');
 
-            // Langkah 6: Respon JSON setelah berhasil melakukan checkout
             return response()->json([
                 'message' => 'Order Saved Successfully',
                 'orderId' => $order->id,
@@ -427,6 +420,127 @@ class CartController extends Controller
             ]);
         }
     }
+    public function processCheckoutApi(Request $request)
+{
+    // Validasi request body
+    $validator = Validator::make($request->all(), [
+        'first_name' => 'required|min:5',
+        'last_name' => 'required',
+        'email' => 'required|email',
+        'country' => 'required',
+        'address' => 'required|min:30',
+        'city' => 'required',
+        'state' => 'required',
+        'zip' => 'required',
+        'mobile' => 'required',
+        'payment_method' => 'required|in:cod'
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'message' => 'Please Fix the Errors',
+            'status' => false,
+            'errors' => $validator->errors()
+        ], 422);
+    }
+
+    // Mengambil user yang sedang login melalui token API
+    $user = Auth::guard('api')->user();
+
+    // Menyimpan atau memperbarui alamat pelanggan
+    CustomerAddress::updateOrCreate(
+        ['user_id' => $user->id],
+        [
+            'user_id' => $user->id,
+            'first_name' => $request->first_name,
+            'last_name' => $request->last_name,
+            'email' => $request->email,
+            'mobile' => $request->mobile,
+            'country_id' => $request->country,
+            'address' => $request->address,
+            'apartment' => $request->apartment,
+            'city' => $request->city,
+            'state' => $request->state,
+            'zip' => $request->zip,
+        ]
+    );
+
+    // Proses checkout dengan metode pembayaran COD
+    if ($request->payment_method == 'cod') {
+        $discountCodeId = null;
+        $promoCode = '';
+        $shipping = 0;
+        $discount = 0;
+        $subTotal = Cart::subtotal(2, '.', '');
+
+        if (session()->has('code')) {
+            $code = session()->get('code');
+            $discount = ($code->type == 'percent')
+                ? ($code->discount_amount / 100) * $subTotal
+                : $code->discount_amount;
+
+            $discountCodeId = $code->id;
+            $promoCode = $code->code;
+        }
+
+        $shippingInfo = ShippingCharge::where('country_id', $request->country)->first();
+        $totalQty = Cart::content()->sum('qty');
+        $shipping = $shippingInfo ? $totalQty * $shippingInfo->amount : 0;
+        $grandTotal = ($subTotal - $discount) + $shipping;
+
+        $order = Order::create([
+            'subtotal' => $subTotal,
+            'shipping' => $shipping,
+            'grand_total' => $grandTotal,
+            'discount' => $discount,
+            'coupon_code_id' => $discountCodeId,
+            'coupon_code' => $promoCode,
+            'payment_status' => '1',
+            'status' => 'pending',
+            'user_id' => $user->id,
+            'first_name' => $request->first_name,
+            'last_name' => $request->last_name,
+            'email' => $request->email,
+            'mobile' => $request->mobile,
+            'address' => $request->address,
+            'apartment' => $request->apartment,
+            'state' => $request->state,
+            'city' => $request->city,
+            'zip' => $request->zip,
+            'notes' => $request->order_notes,
+            'country_id' => $request->country,
+        ]);
+
+        foreach (Cart::content() as $item) {
+            OrderItem::create([
+                'product_id' => $item->id,
+                'order_id' => $order->id,
+                'name' => $item->name,
+                'qty' => $item->qty,
+                'price' => $item->price,
+                'total' => $item->price * $item->qty,
+            ]);
+
+            // Update kuantitas produk
+            $productData = Product::find($item->id);
+            if ($productData && $productData->track_qty == 'Yes') {
+                $productData->decrement('qty', $item->qty);
+            }
+        }
+
+        Cart::destroy();
+        session()->forget('code');
+
+        return response()->json([
+            'message' => 'Order Saved Successfully',
+            'orderId' => $order->id,
+            'status' => true
+        ]);
+    }
+
+    return response()->json(['message' => 'Invalid payment method', 'status' => false], 400);
+}
+
 
 
 

@@ -42,6 +42,8 @@ Route::middleware('auth:sanctum')->group(function () {
     
     Route::post('/logout', [AuthUserController::class, 'logout']);
     Route::post('/checkout', [CartController::class, 'checkoutApi']);
+    Route::post('/procescheckout', [CartController::class, 'processCheckoutApi']);
+
 
     
 });
