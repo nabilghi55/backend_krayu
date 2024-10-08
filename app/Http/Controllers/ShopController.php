@@ -67,13 +67,14 @@ class ShopController extends Controller
             $relatedProducts = Product::whereIn('id', $productArray)->where('status', 1)->get();
         }
     
-        $data = [
-            'product' => $product,
-            'relatedProducts' => $relatedProducts
-        ];
-    
-        return response()->json($data);
+       
+        return response()->json([
+            'message' => 'Product data retrieved successfully',
+            'data' => $product,
+            'related_product' => $relatedProducts
+        ], 200);
     }
+    
     
 
     public function saveRating($id, Request $request){

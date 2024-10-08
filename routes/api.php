@@ -20,15 +20,28 @@ use App\Http\Controllers\PaymentCallbackController;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
+// Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+//     return $request->user();
+// });
 
 Route::post('login', [AuthUserController::class, 'login']);
 Route::post('register', [AuthUserController::class, 'register']);
+
 Route::post('password/forgot', [AuthUserController::class, 'forgotPassword']);
 Route::post('password/reset/{token}', [AuthUserController::class, 'resetPassword']);
 
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/profile', [AuthUserController::class, 'profile']);
+    
+    Route::post('/profile/update', [AuthUserController::class, 'updateProfile']);
+    
+    Route::post('/address/update', [AuthUserController::class, 'updateAddress']);
+    
+    Route::post('/password/change', [AuthUserController::class, 'changePassword']);
+    
+    Route::post('/logout', [AuthUserController::class, 'logout']);
+    
+});
 Route::post('/payments/midtrans-notification', [PaymentCallbackController::class, 'receive']);
 Route::get('/dummy-payment-callback', [PaymentCallbackController::class, 'dummyCallback']);
 Route::get('/products', [FrontController::class, 'index']);
