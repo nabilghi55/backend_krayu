@@ -29,9 +29,6 @@ Route::post('register', [AuthUserController::class, 'register']);
 Route::post('password/forgot', [AuthUserController::class, 'forgotPassword']);
 Route::post('password/reset/{token}', [AuthUserController::class, 'resetPassword']);
 
-
-
-
 Route::post('/payments/midtrans-notification', [PaymentCallbackController::class, 'receive']);
 Route::get('/dummy-payment-callback', [PaymentCallbackController::class, 'dummyCallback']);
 Route::get('/products', [FrontController::class, 'index']);
