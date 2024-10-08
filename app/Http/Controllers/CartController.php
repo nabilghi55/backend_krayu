@@ -212,7 +212,75 @@ class CartController extends Controller
             'grandTotal' => $grandTotal,
         ]);
     }
-
+    public function checkoutApi(Request $request)
+    {
+        // Validasi request body
+        $validatedData = $request->validate([
+            'discount_code' => 'nullable|string',
+            'customer_address_id' => 'required|integer',
+            'cart_items' => 'required|array',
+            'cart_items.*.id' => 'required|integer',
+            'cart_items.*.qty' => 'required|integer|min:1',
+        ]);
+    
+        $discount = 0;
+        $customerAddress = CustomerAddress::find($validatedData['customer_address_id']);
+    
+        if (!$customerAddress) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Customer address not found'
+            ], 404);
+        }
+    
+        $subTotal = 0;
+    
+        // Calculate subtotal based on cart items
+        foreach ($validatedData['cart_items'] as $item) {
+            $product = Product::find($item['id']);
+            if (!$product) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Product not found with id: ' . $item['id']
+                ], 404);
+            }
+            $subTotal += $product->price * $item['qty'];
+        }
+    
+        // Handle discount code if applicable
+        // if (!empty($validatedData['discount_code'])) {
+        //     $code = DiscountCode::where('code', $validatedData['discount_code'])->first();
+        //     if ($code) {
+        //         if ($code->type == 'percent') {
+        //             $discount = ($code->discount_amount / 100) * $subTotal;
+        //         } else {
+        //             $discount = $code->discount_amount;
+        //         }
+        //     }
+        // }
+    
+        // Calculate shipping
+        $shippingInfo = ShippingCharge::where('country_id', $customerAddress->country_id)->first();
+        $totalShippingCharge = 0;
+        if ($shippingInfo) {
+            $totalQty = array_sum(array_column($validatedData['cart_items'], 'qty'));
+            $totalShippingCharge = $totalQty * $shippingInfo->amount;
+        }
+    
+        // Calculate grand total
+        $grandTotal = ($subTotal - $discount) + $totalShippingCharge;
+    
+        // Response JSON
+        return response()->json([
+            'status' => 'success',
+            'subTotal' => $subTotal,
+            'discount' => $discount,
+            'totalShippingCharge' => $totalShippingCharge,
+            'grandTotal' => $grandTotal,
+        ]);
+    }
+    
+    
     public function processCheckout(Request $request)
     {
 

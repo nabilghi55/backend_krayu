@@ -90,7 +90,6 @@ class AuthUserController extends Controller
         return response()->json([
             'status' => true,
             'user' => $user,
-            'countries' => Country::orderBy('name', 'ASC')->get(),
             'address' => CustomerAddress::where('user_id', $user->id)->first(),
         ]);
     }
@@ -126,31 +125,32 @@ class AuthUserController extends Controller
             'first_name' => 'required|min:5',
             'last_name' => 'required',
             'email' => 'required|email',
-            'country_id' => 'required',
+            'country_id' => 'required', // Pastikan ada validasi untuk country
             'address' => 'required|min:30',
             'city' => 'required',
             'state' => 'required',
             'zip' => 'required',
             'mobile' => 'required',
         ]);
-
+    
         if ($validator->fails()) {
             return response()->json([
                 'status' => false,
                 'errors' => $validator->errors(),
             ], 422);
         }
-
+    
         CustomerAddress::updateOrCreate(
             ['user_id' => Auth::user()->id],
-            $request->only(['first_name', 'last_name', 'email', 'mobile', 'country_id', 'address', 'apartment', 'city', 'state', 'zip'])
+            $request->only(['first_name', 'last_name', 'email', 'mobile', 'country_id', 'country', 'address', 'apartment', 'city', 'state', 'zip'])
         );
-
+    
         return response()->json([
             'status' => true,
             'message' => 'Address updated successfully',
         ]);
     }
+    
 
     public function logout()
     {

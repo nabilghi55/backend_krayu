@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AuthUserController;
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\FrontController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ShopController;
@@ -40,6 +41,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/password/change', [AuthUserController::class, 'changePassword']);
     
     Route::post('/logout', [AuthUserController::class, 'logout']);
+    Route::post('/checkout', [CartController::class, 'checkoutApi']);
+
     
 });
 Route::post('/payments/midtrans-notification', [PaymentCallbackController::class, 'receive']);
