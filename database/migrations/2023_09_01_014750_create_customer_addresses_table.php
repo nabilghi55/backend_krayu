@@ -24,6 +24,8 @@ return new class extends Migration
             $table->string('city');
             $table->string('state');
             $table->string('zip');
+            $table->string('district');
+            $table->string('subDistrict');
             $table->timestamps();
         });
     }

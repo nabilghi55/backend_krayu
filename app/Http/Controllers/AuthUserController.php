@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Mail\ResetPasswordEmail;
@@ -86,11 +87,12 @@ class AuthUserController extends Controller
     public function profile()
     {
         $user = Auth::user();
+        $address = CustomerAddress::where('user_id', $user->id)->first();
 
         return response()->json([
             'status' => true,
             'user' => $user,
-            'address' => CustomerAddress::where('user_id', $user->id)->first(),
+            'address' => $address, // Ini sekarang harus memiliki district dan subDistrict jika disimpan dengan benar
         ]);
     }
 
@@ -131,26 +133,27 @@ class AuthUserController extends Controller
             'state' => 'required',
             'zip' => 'required',
             'mobile' => 'required',
+            'district' => 'required', // Tambahkan validasi untuk district
+            'subDistrict' => 'required', // Tambahkan validasi untuk subDistrict
         ]);
-    
+
         if ($validator->fails()) {
             return response()->json([
                 'status' => false,
                 'errors' => $validator->errors(),
             ], 422);
         }
-    
+
         CustomerAddress::updateOrCreate(
             ['user_id' => Auth::user()->id],
-            $request->only(['first_name', 'last_name', 'email', 'mobile', 'country_id', 'country', 'address', 'apartment', 'city', 'state', 'zip'])
+            $request->only(['first_name', 'last_name', 'email', 'mobile', 'country_id', 'country', 'address', 'apartment', 'city', 'state', 'zip', 'district', 'subDistrict']) // Pastikan untuk menyertakan district dan subDistrict
         );
-    
+
         return response()->json([
             'status' => true,
             'message' => 'Address updated successfully',
         ]);
     }
-    
 
     public function logout()
     {
